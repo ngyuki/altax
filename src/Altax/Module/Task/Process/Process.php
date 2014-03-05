@@ -112,8 +112,17 @@ class Process
         $ssh = new \Net_SSH2(
             $this->node->getHostOrDefault(),
             $this->node->getPortOrDefault());
-        $key = new \Crypt_RSA();
-        $key->loadKey(file_get_contents($this->node->getKeyOrDefault()));
+
+        if ($this->node->useAgent()) {
+            if (class_exists('System_SSH_Agent', true) == false) {
+                require_once 'System/SSH_Agent.php';
+            }
+            $key = new \System_SSH_Agent();
+        } else {
+            $key = new \Crypt_RSA();
+            $key->loadKey(file_get_contents($this->node->getKeyOrDefault()));
+        }
+
         if (!$ssh->login($this->node->getUsernameOrDefault(), $key)) {
             throw new \RuntimeException('Unable to login '.$this->node->getName());
         }
